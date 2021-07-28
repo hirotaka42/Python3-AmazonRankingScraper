@@ -1,4 +1,7 @@
 import requests
+#from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.util import Retry
+from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup
 
 
@@ -6,7 +9,7 @@ from bs4 import BeautifulSoup
 # スクレイピング Tool
 # 使い方
 # pip install モジュール
-#             requests
+#             requests        ->> https://pypi.org/project/requests/
 #			  BeautifulSoup4
 #			  pandas 
 #			  json
@@ -15,29 +18,55 @@ from bs4 import BeautifulSoup
 #
 #
 
-_target1 = 'dp/'
-_target2 = '?_'
+_TARGET_WORD_1 = 'dp/'
+_TARGET_WORD_2 = '?_'
 
-_url = "https://www.amazon.co.jp/"
-_category = 'digital-text'
-_browse_node_id = '2293143051'
+_BASE_URL = "https://www.amazon.co.jp/"
+_CATEGORY = 'digital-text'
+_BROWSE_NODE_ID = '2293143051'
+_DEFAULT_BEAUTIFULSOUP_PARSER = "html.parser"
+_DEFAULT_USER_AGENT = 'Mozilla/5.0 (Linux; Android 7.0; \
+SM-A520F Build/NRD90M; wv) AppleWebKit/537.36 \
+(KHTML, like Gecko) Version/4.0 \
+Chrome/65.0.3325.109 Mobile Safari/537.36'
+_CHROME_DESKTOP_USER_AGENT = 'Mozilla/5.0 (Macintosh; \
+Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) \
+Chrome/67.0.3396.79 Safari/537.36'
+
+_USER_AGENT_LIST = [
+    _DEFAULT_USER_AGENT,
+    _CHROME_DESKTOP_USER_AGENT,
+]
 
 
 info = []
 
 
 def ama(load_url):
+	# ステータスコードでのリトライ
+	# 参考: https://qiita.com/azumagoro/items/3402facf0bcfecea0f06
+	session = requests.Session()
+	retries = Retry(total=5,  # リトライ回数
+                backoff_factor=1,  # sleep時間
+                status_forcelist=[500, 502, 503, 504])  # timeout以外でリトライするステータスコード
+
+	session.mount("https://", HTTPAdapter(max_retries=retries))
+	
 	# Webページを取得して解析する
 	# 目的URL https://www.amazon.co.jp/gp/bestsellers/digital-text/2293143051/?pg=2
-	html = requests.get(load_url)
 	# ステータスコードでの
 	try:
-		html.raise_for_status()
-	except Exception as exc:
-		print('問題あり:{}'.format(exc))
+		html = session.get(url=load_url,
+	                       stream=True,
+	                       timeout=(10.0, 30.0)) # connect timeoutを10秒, read timeoutを30秒に設定
 
-	soup = BeautifulSoup(html.content, "html.parser")
-	return soup
+	except requests.exceptions.ConnectTimeout:
+		print('問題あり:タイムアウトしました')
+		sys.exit()
+
+	else:
+		soup = BeautifulSoup(html.content, _DEFAULT_BEAUTIFULSOUP_PARSER)
+		return soup
 
 
 
@@ -52,12 +81,12 @@ def get_ViewInfo(ele):
 	MAIN_PAGE_URL = MAIN_PAGE_tag.find("a", class_="a-link-normal").get("href")
 
 	# 作品ページから無駄な文字列の削除
-	idx = MAIN_PAGE_URL.find(_target1)  # 半角空白文字のインデックスを検索
+	idx = MAIN_PAGE_URL.find(_TARGET_WORD_1)  # 半角空白文字のインデックスを検索
 	# 検索文字列の先頭文字の場所が idxに格納される
 	retext = MAIN_PAGE_URL[idx+3:]
-	idx2 = retext.find(_target2)
+	idx2 = retext.find(_TARGET_WORD_2)
 	ASIN = retext[:idx2]
-	MAIN = _url + _target1 + ASIN
+	MAIN = _BASE_URL + _TARGET_WORD_1 + ASIN
 
 	print("Ranking : "+ RANK)
 	print("Title   : "+ TITLE)
@@ -73,13 +102,16 @@ def get_ViewInfo(ele):
 
 
 def main():
-	load_url = _url + 'gp/bestsellers/' +  _category + '/' + _browse_node_id + '/' + '?pg=' + "1"
+	load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + "1"
 	print("++++++++++++++++++++++++++++++++++++++++++++++++")
 	print(" ")
 	print(load_url)
 	print(" ")
 	print("++++++++++++++++++++++++++++++++++++++++++++++++")
 	soup = ama(load_url)
+
+
+
 	# すべてのliタグを検索して、その文字列を表示する
 	for ele in soup.find_all("li", class_="zg-item-immersion"):
 		get_ViewInfo(ele)
