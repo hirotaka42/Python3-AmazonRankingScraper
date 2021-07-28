@@ -41,7 +41,6 @@ def print_data(data):
 def ama(load_url):
 	# ステータスコードでのリトライ
 	# 参考: https://qiita.com/azumagoro/items/3402facf0bcfecea0f06
-	time.sleep(2)
 	session = requests.Session()
 	retries = Retry(total=5,  # リトライ回数
                 backoff_factor=1,  # sleep時間
@@ -64,7 +63,6 @@ def ama(load_url):
 	else:
 		print(html.status_code)
 
-	print(html.text[:500])
 	soup = BeautifulSoup(html.content, _DEFAULT_BEAUTIFULSOUP_PARSER)
 	return soup
 
