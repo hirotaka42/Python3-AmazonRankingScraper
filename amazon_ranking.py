@@ -35,7 +35,7 @@ _DEFAULT_BEAUTIFULSOUP_PARSER = "html.parser"
 _TODAY = datetime.datetime.now().strftime('%Y.%m.%d-%H-%M')
 
 _INFO_SUM = '8'
-_DEBUG_FLAG = '1' #ON='1' OFF='0'
+_DEBUG_FLAG = '0' #ON='1' OFF='0'
 _DEBUG_VIEW = '1' #ON='1' OFF='0'
 
 info = []
