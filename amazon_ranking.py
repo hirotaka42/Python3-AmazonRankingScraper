@@ -1,5 +1,4 @@
 import requests
-#from requests.packages.urllib3.util.retry import Retry
 from requests.packages.urllib3.util import Retry
 from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup
@@ -18,6 +17,8 @@ from selenium import webdriver
 #			  BeautifulSoup4
 #			  pandas 
 #			  json
+#			  selenium       ->> https://kakashi-blog.com/amazon%E3%81%AF%E3%82%B9%E3%82%AF%E3%83%AC%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0%E3%81%8C%E7%A6%81%E6%AD%A2%E3%80%82selenium%E3%81%A7%E3%83%87%E3%83%BC%E3%82%BF%E5%8F%8E%E9%9B%86%E3%82%92%E3%81%97/
+#
 #
 # python3 amazon_ranking.py
 #
@@ -34,6 +35,9 @@ _DEFAULT_BEAUTIFULSOUP_PARSER = "html.parser"
 _TODAY = datetime.datetime.now().strftime('%Y.%m.%d-%H-%M')
 
 _INFO_SUM = '8'
+_DEBUG_FLAG = '1' #ON='1' OFF='0'
+_DEBUG_VIEW = '1' #ON='1' OFF='0'
+
 info = []
 
 class get_sous:
@@ -59,16 +63,21 @@ class get_sous:
         btn.click()
         time.sleep(5)
 
-def get_summary(load_url):
+def open_selenium(load_url):
 	webd=webdriver.Chrome(_DRIVER)
 	open1=get_sous(load_url,webd)
 	open1.openurl()
 	sous1=open1.getbrowser()
-	main_soup=BeautifulSoup(sous1, 'html.parser')
+	soup=BeautifulSoup(sous1, 'html.parser')
+	return soup
+
+
+def get_summary(main_soup):
 	# ここは実際に実行しデバック表示させて確認しないと抽出要素の基準が絞れないので注意
-	# noscriptにはデコードされていない文字列が入っていた。
+	# noscriptにはデコード?されていない文字列が入っていた。
 	summary = main_soup.find("div", id="bookDescription_feature_div").find("noscript").text.strip()
 	return summary
+
 
 # 型と中身を表示させる関数
 def print_data(data):
@@ -122,7 +131,8 @@ def get_info(ele):
 	idx2 = retext.find(_TARGET_WORD_2)
 	ASIN = retext[:idx2]
 	MAIN = _BASE_URL + _TARGET_WORD_1 + ASIN
-	summary = get_summary(MAIN)
+	main_soup = open_selenium(MAIN)
+	SUMMARY = get_summary(main_soup)
 
 	#info 8項目
 	info = {
@@ -133,51 +143,32 @@ def get_info(ele):
 	"img": PICTURE_URL,
 	"asin": ASIN,
 	"url": MAIN,
-	"summary": summary
+	"summary": SUMMARY
 	}
+
+	if _DEBUG_VIEW == '1':
+		print("Ranking : "+ RANK)
+		print("Title   : "+ TITLE)
+		#Score系は 評価のない新刊に対してErrとなるため 一旦保留
+		#print("Score   : "+ element.find("i", class_="a-icon a-icon-star a-star-5 aok-align-top").text)
+		#print("ScoreSUM: "+ element.find("a", class_="a-size-small a-link-normal").text)
+		print("Author  : "+ AUTHOR)
+		print("Price   : "+ PRICE)
+		print("Picture : "+ PICTURE_URL)
+		print("Asin    : "+ ASIN)
+		print("MainPage: "+ MAIN)
+		print("SUMMARY : "+ SUMMARY)
+		print("= = = = = = = = = = =  = = = = = = = =  = = = = = = =  = = = = =  = = = =  =")
 
 	return info
 
-
-def get_ViewInfo(ele):
-	RANK = ele.find("span", class_="zg-badge-text").text
-	TITLE = ele.find("div", class_="p13n-sc-truncate").text.strip()
-	AUTHOR = ele.find("div", class_="a-row a-size-small").text
-	PRICE = ele.find("span", class_="p13n-sc-price").text
-	PICTURE_tag = ele.find("div", class_="a-section a-spacing-small")
-	PICTURE_URL = PICTURE_tag.find("img").get("src")
-	MAIN_PAGE_tag = ele.find("span", class_="aok-inline-block zg-item")
-	MAIN_PAGE_URL = MAIN_PAGE_tag.find("a", class_="a-link-normal").get("href")
-
-	# 作品ページから無駄な文字列の削除
-	idx = MAIN_PAGE_URL.find(_TARGET_WORD_1)  # 半角空白文字のインデックスを検索
-	# 検索文字列の先頭文字の場所が idxに格納される
-	#retext = MAIN_PAGE_URL[idx+3:idx+13] #dp/の3文字分をずらしてURLから10文字分スライス
-	retext = MAIN_PAGE_URL[idx+3:] #dp/の3文字分をずらし
-	idx2 = retext.find(_TARGET_WORD_2)
-	ASIN = retext[:idx2]
-	MAIN = _BASE_URL + _TARGET_WORD_1 + ASIN
-	summary = get_summary(MAIN)
-
-	print("Ranking : "+ RANK)
-	print("Title   : "+ TITLE)
-	#Score系は 評価のない新刊に対してErrとなるため 一旦保留
-	#print("Score   : "+ element.find("i", class_="a-icon a-icon-star a-star-5 aok-align-top").text)
-	#print("ScoreSUM: "+ element.find("a", class_="a-size-small a-link-normal").text)
-	print("Author  : "+ AUTHOR)
-	print("Price   : "+ PRICE)
-	print("Picture : "+ PICTURE_URL)
-	print("Asin    : "+ ASIN)
-	print("MainPage: "+ MAIN)
-	print("SUMMARY : "+ summary)
-	print("= = = = = = = = = = =  = = = = = = = =  = = = = = = =  = = = = =  = = = =  =")
-
+	
 def write(info):
 	time.sleep(2)
 	# utf-8で書き込み
 	with open('Amazon' + str(_TODAY) + '.json', 'w', encoding='utf-8_sig') as fp:
 		# 辞書(info)をインデントをつけてアスキー文字列ではない形で保存
-	    json.dump(info, fp, indent=8, ensure_ascii=False )
+	    json.dump(info, fp, indent=int(_INFO_SUM), ensure_ascii=False )
 	# 書き込みオブジェクトを閉じる
 	fp.close()
 
@@ -187,7 +178,7 @@ def write(info):
 
 
 	
-def data_view():
+def json_data_view():
 	#取得したJsonデータを表示
 	with open('Amazon' + str(_TODAY) + '.json', 'r', encoding='utf-8_sig') as fp:
 		data = json.load(fp)
@@ -197,25 +188,7 @@ def data_view():
 	print_data(data)
 
 
-def main():
-	for n in range(1,3):
-		load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + str(n)
-		print("++++++++++++++++++++++++++++++++++++++++++++++++")
-		print(" ")
-		print(load_url)
-		print(" ")
-		print("++++++++++++++++++++++++++++++++++++++++++++++++")
-		soup = ama(load_url)
-		# すべてのliタグを検索して、その文字列を表示する
-		for ele in soup.find_all("li", class_="zg-item-immersion"):
-			#get_ViewInfo(ele)
-			info.append(get_info(ele))
-
-		write(info)
-
-
-def debug_main():
-	load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + '1'
+def get_data(load_url):
 	print("++++++++++++++++++++++++++++++++++++++++++++++++")
 	print(" ")
 	print(load_url)
@@ -224,17 +197,28 @@ def debug_main():
 	soup = ama(load_url)
 	# すべてのliタグを検索して、その文字列を表示する
 	for ele in soup.find_all("li", class_="zg-item-immersion"):
-		#get_ViewInfo(ele)
 		info.append(get_info(ele))
 
 	write(info)
-	
+
+
+def main():
+
+	if _DEBUG_FLAG == '0':
+		for n in range(1,3):
+			load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + str(n)
+			get_data(load_url)
+	else :
+		print("DEBUG_FLAG :"+ _DEBUG_FLAG)
+		print("DEBUG_VIEW :"+ _DEBUG_VIEW)
+		load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + '1'
+		get_data(load_url)
 
 
 if __name__ == '__main__':
-    main()
-    #debug_main()
-    data_view()
+
+	main()
+	json_data_view()
 
 
 
