@@ -27,14 +27,14 @@ from selenium import webdriver
 _TARGET_WORD_1 = 'dp/'
 _TARGET_WORD_2 = '?_'
 
-_DRIVER = "/usr/local/bin/chromedriver" 
+_DRIVER = "/usr/local/bin/chromedriver" # 各環境のブラウザドラーバーのパスを設定
 _BASE_URL = "https://www.amazon.co.jp/"
 _CATEGORY = 'digital-text'
 _BROWSE_NODE_ID = '2293143051'
 _DEFAULT_BEAUTIFULSOUP_PARSER = "html.parser"
 _TODAY = datetime.datetime.now().strftime('%Y.%m.%d-%H-%M')
 
-_INFO_SUM = '8'
+_INFO_SUM = '10'
 _DEBUG_FLAG = '0' #ON='1' OFF='0'
 _DEBUG_VIEW = '1' #ON='1' OFF='0'
 
@@ -78,6 +78,18 @@ def get_summary(main_soup):
 	summary = main_soup.find("div", id="bookDescription_feature_div").find("noscript").text.strip()
 	return summary
 
+def get_release(main_soup):
+	# 参考: https://qiita.com/Azunyan1111/items/b161b998790b1db2ff7a
+	release = main_soup.select_one("#detailBullets_feature_div > ul > li:nth-child(3) > span > span:nth-child(2)").text
+	return release
+
+def get_publisher(main_soup):
+	publisher = main_soup.select_one("ol.a-carousel > li:nth-child(2) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
+	# たまに順番がずれている場合があるため"日本語"が来た場合後ろの値を再取得する
+	if publisher == "日本語":
+		publisher = main_soup.select_one("ol.a-carousel > li:nth-child(3) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
+
+	return publisher
 
 # 型と中身を表示させる関数
 def print_data(data):
@@ -133,8 +145,10 @@ def get_info(ele):
 	MAIN = _BASE_URL + _TARGET_WORD_1 + ASIN
 	main_soup = open_selenium(MAIN)
 	SUMMARY = get_summary(main_soup)
+	RELEASE = get_release(main_soup)
+	PUBLISHER = get_publisher(main_soup)
 
-	#info 8項目
+	#info 10項目
 	info = {
 	"ranking": RANK,
 	"title": TITLE,
@@ -143,7 +157,9 @@ def get_info(ele):
 	"img": PICTURE_URL,
 	"asin": ASIN,
 	"url": MAIN,
-	"summary": SUMMARY
+	"summary": SUMMARY,
+	"release": RELEASE,
+	"publisher": PUBLISHER
 	}
 
 	if _DEBUG_VIEW == '1':
@@ -158,6 +174,8 @@ def get_info(ele):
 		print("Asin    : "+ ASIN)
 		print("MainPage: "+ MAIN)
 		print("SUMMARY : "+ SUMMARY)
+		print("Release : "+ RELEASE)
+		print("PUB     : "+ PUBLISHER)
 		print("= = = = = = = = = = =  = = = = = = = =  = = = = = = =  = = = = =  = = = =  =")
 
 	return info
