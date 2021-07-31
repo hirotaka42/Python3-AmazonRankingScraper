@@ -40,6 +40,7 @@ _DEBUG_VIEW = '1' #ON='1' OFF='0'
 _DEBUG_CNT = 5
 _DEBUG_FILE = '2021.07.31-22-07.json' #表示したいファイルを設定する
 _DEBUG_FILE_VIEW_FLAG = '0' #ON='1'(_DEBUG_FILEを読み込み表示する) | OFF='0' 
+_DICT_CNT = 0 #JSONファイル作成時の要素のカウントで使用
 
 _dict_info = {}
 _list_info = []
@@ -216,7 +217,7 @@ def json_data_view():
 
 
 def get_data(load_url):
-	i = 0
+	global _DICT_CNT
 	print("++++++++++++++++++++++++++++++++++++++++++++++++")
 	print(" ")
 	print(load_url)
@@ -227,15 +228,13 @@ def get_data(load_url):
 	for ele in soup.find_all("li", class_="zg-item-immersion"):
 		
 		_dict = get_info(ele)
-		_num = 'id_'+ str(i)
+		_num = 'id_'+ str(_DICT_CNT)
 		_dict_info[_num] = _dict
 		_list_info.append(_dict)
-		i+=1
+		_DICT_CNT+=1
 		if _DEBUG_FLAG == '1':
-			if _DEBUG_CNT < i+1:
+			if _DEBUG_CNT < _DICT_CNT+1:
 				break
-
-	write(_dict_info,_list_info)
 
 
 def main():
@@ -251,6 +250,8 @@ def main():
 		load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + '1'
 		get_data(load_url)
 
+	#ファイルへの出力
+	write(_dict_info,_list_info)
 
 if __name__ == '__main__':
 
