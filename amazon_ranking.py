@@ -37,8 +37,12 @@ _TODAY = datetime.datetime.now().strftime('%Y.%m.%d-%H-%M')
 _INFO_SUM = '10'
 _DEBUG_FLAG = '0' #ON='1' OFF='0'
 _DEBUG_VIEW = '1' #ON='1' OFF='0'
+_DEBUG_CNT = 5
+_DEBUG_FILE = '2021.07.31-22-07.json' #表示したいファイルを設定する
+_DEBUG_FILE_VIEW_FLAG = '0' #ON='1'(_DEBUG_FILEを読み込み表示する) | OFF='0' 
 
-info = []
+_dict_info = {}
+_list_info = []
 
 class get_sous:
     
@@ -95,6 +99,7 @@ def get_publisher(main_soup):
 def print_data(data):
     print(type(data))
     print(data)
+    print(json.dumps(data,indent=int(_INFO_SUM), ensure_ascii=False ))
 
 def ama(load_url):
 	# ステータスコードでのリトライ
@@ -181,25 +186,29 @@ def get_info(ele):
 	return info
 
 	
-def write(info):
+def write(_dict,_list):
 	time.sleep(2)
 	# utf-8で書き込み
 	with open('Amazon' + str(_TODAY) + '.json', 'w', encoding='utf-8_sig') as fp:
 		# 辞書(info)をインデントをつけてアスキー文字列ではない形で保存
-	    json.dump(info, fp, indent=int(_INFO_SUM), ensure_ascii=False )
+	    json.dump(_dict, fp, indent=int(_INFO_SUM), ensure_ascii=False )
 	# 書き込みオブジェクトを閉じる
 	fp.close()
 
 	#pandasを使用してCSV形式で出力
-	df = pd.DataFrame(info)
+	df = pd.DataFrame(_list)
 	df.to_csv('Amazon' + str(_TODAY) + '.csv',encoding='utf-8_sig')  
 
 
 	
 def json_data_view():
 	#取得したJsonデータを表示
-	with open('Amazon' + str(_TODAY) + '.json', 'r', encoding='utf-8_sig') as fp:
-		data = json.load(fp)
+	if _DEBUG_FILE_VIEW_FLAG == '0':
+		with open('Amazon' + str(_TODAY) + '.json', 'r', encoding='utf-8_sig') as fp:
+			data = json.load(fp)
+	else :
+		with open(_DEBUG_FILE, 'r', encoding='utf-8_sig') as fp:
+			data = json.load(fp)
 
 	# 書き込みオブジェクトを閉じる
 	fp.close()
@@ -207,6 +216,7 @@ def json_data_view():
 
 
 def get_data(load_url):
+	i = 0
 	print("++++++++++++++++++++++++++++++++++++++++++++++++")
 	print(" ")
 	print(load_url)
@@ -215,9 +225,17 @@ def get_data(load_url):
 	soup = ama(load_url)
 	# すべてのliタグを検索して、その文字列を表示する
 	for ele in soup.find_all("li", class_="zg-item-immersion"):
-		info.append(get_info(ele))
+		
+		_dict = get_info(ele)
+		_num = 'id_'+ str(i)
+		_dict_info[_num] = _dict
+		_list_info.append(_dict)
+		i+=1
+		if _DEBUG_FLAG == '1':
+			if _DEBUG_CNT < i+1:
+				break
 
-	write(info)
+	write(_dict_info,_list_info)
 
 
 def main():
@@ -229,14 +247,18 @@ def main():
 	else :
 		print("DEBUG_FLAG :"+ _DEBUG_FLAG)
 		print("DEBUG_VIEW :"+ _DEBUG_VIEW)
+		print("DEBUG_CNT  :"+ str(_DEBUG_CNT))
 		load_url = _BASE_URL + 'gp/bestsellers/' +  _CATEGORY + '/' + _BROWSE_NODE_ID + '/' + '?pg=' + '1'
 		get_data(load_url)
 
 
 if __name__ == '__main__':
 
-	main()
-	json_data_view()
+	if _DEBUG_FILE_VIEW_FLAG == '0':
+		main()
+		json_data_view()
+	else :
+		json_data_view()
 
 
 
