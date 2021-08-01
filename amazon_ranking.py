@@ -141,7 +141,8 @@ def get_info(ele):
 	MAIN_PAGE_tag = ele.find("span", class_="aok-inline-block zg-item")
 	MAIN_PAGE_URL = MAIN_PAGE_tag.find("a", class_="a-link-normal").get("href")
 
-	# 作品ページから無駄な文字列の削除
+	PRICE = PRICE[1:]
+	# 作品ページURLから無駄な文字列の削除
 	idx = MAIN_PAGE_URL.find(_TARGET_WORD_1)  # 半角空白文字のインデックスを検索
 	# 検索文字列の先頭文字の場所が idxに格納される
 	#retext = MAIN_PAGE_URL[idx+3:idx+13] #dp/の3文字分をずらしてURLから10文字分スライス
