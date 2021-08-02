@@ -1,5 +1,5 @@
 import json
-_DEBUG_FILE = 'ama.json' #出力したいjsonファイル
+_DEBUG_FILE = 'Amazon2021.08.02-04-20.json' #出力したいjsonファイル
 
 
 # Eclipse IDE専用プログラム出力
@@ -13,7 +13,7 @@ with open(_DEBUG_FILE, 'r', encoding='utf-8_sig') as f:
 for jsn_val in jsn.values():
     print("map = new HashMap<>();")
     print('map.put("ranking"' + "," + '"' + jsn_val["ranking"] + '");')
-    print('map.put("name"' + "," + '"' + jsn_val["title"] + '");')
+    print('map.put("title"' + "," + '"' + jsn_val["title"] + '");')
     print('map.put("author"' + "," + '"' + jsn_val["author"] + '");')
     print('map.put("price"' + "," + '"' + jsn_val["price"] + '");')
     print('map.put("img"' + "," + '"' + jsn_val["img"] + '");')
