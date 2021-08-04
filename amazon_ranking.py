@@ -7,6 +7,7 @@ import datetime
 import pandas as pd
 import json
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options #headlessオプションに使用
 
 
 # Amazon ランキング　
@@ -69,8 +70,12 @@ class get_sous:
         time.sleep(5)
 
 def open_selenium(load_url):
-	webd=webdriver.Chrome(_DRIVER)
+	# ブラウザーの設定
+	option = Options()
+	option.add_argument('--headless')
+	webd=webdriver.Chrome(_DRIVER,options=option)
 	open1=get_sous(load_url,webd)
+	# ブラウザーの起動
 	open1.openurl()
 	sous1=open1.getbrowser()
 	soup=BeautifulSoup(sous1, 'html.parser')
@@ -141,7 +146,8 @@ def get_info(ele):
 	MAIN_PAGE_tag = ele.find("span", class_="aok-inline-block zg-item")
 	MAIN_PAGE_URL = MAIN_PAGE_tag.find("a", class_="a-link-normal").get("href")
 
-	# 作品ページから無駄な文字列の削除
+	PRICE = PRICE[1:]
+	# 作品ページURLから無駄な文字列の削除
 	idx = MAIN_PAGE_URL.find(_TARGET_WORD_1)  # 半角空白文字のインデックスを検索
 	# 検索文字列の先頭文字の場所が idxに格納される
 	#retext = MAIN_PAGE_URL[idx+3:idx+13] #dp/の3文字分をずらしてURLから10文字分スライス
@@ -190,9 +196,15 @@ def get_info(ele):
 def write(_dict,_list):
 	time.sleep(2)
 	# utf-8で書き込み
-	with open('Amazon' + str(_TODAY) + '.json', 'w', encoding='utf-8_sig') as fp:
+	with open('Amazon' + str(_TODAY) + '_id付' + '.json', 'w', encoding='utf-8_sig') as fp:
 		# 辞書(info)をインデントをつけてアスキー文字列ではない形で保存
 	    json.dump(_dict, fp, indent=int(_INFO_SUM), ensure_ascii=False )
+	# 書き込みオブジェクトを閉じる
+	fp.close()
+	# utf-8で書き込み
+	with open('Amazon' + str(_TODAY) + '.json', 'w', encoding='utf-8_sig') as fp:
+		# 辞書(info)をインデントをつけてアスキー文字列ではない形で保存
+	    json.dump(_list, fp, indent=int(_INFO_SUM), ensure_ascii=False )
 	# 書き込みオブジェクトを閉じる
 	fp.close()
 
