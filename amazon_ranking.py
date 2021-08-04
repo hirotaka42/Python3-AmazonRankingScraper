@@ -72,7 +72,20 @@ class get_sous:
 def open_selenium(load_url):
 	# ブラウザーの設定
 	option = Options()
+	#ブラウザ非表示
 	option.add_argument('--headless')
+	# スクロールバー非表示
+	#option.add_argument('--hide-scrollbars')
+	# シークレットモード指定
+	#option.add_argument('--incognito')
+	# ユーザーエージェント指定
+	#option.add_argument('--user-agent=hogehoge')
+	# 言語指定
+	#option.add_argument('--lang=ja')
+	# SSLセキュリティを緩くする
+	#option.add_argument('--ignore-certificate-errors')
+	# 画像を読み込まない
+	option.add_argument('--blink-settings=imagesEnabled=false')
 	webd=webdriver.Chrome(_DRIVER,options=option)
 	open1=get_sous(load_url,webd)
 	# ブラウザーの起動
