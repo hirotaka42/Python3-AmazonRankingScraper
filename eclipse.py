@@ -53,7 +53,7 @@ elif _SELECT_FLAG == 1:
     print('---------------------')
 
 elif _SELECT_FLAG == 2:    
-    jsn_str = json.dumps(jsn,indent=int(_INFO_SUM), ensure_ascii=False)
+    jsn_str = json.dumps(jsn, indent=int(_INFO_SUM), ensure_ascii=False)
     print(jsn_str)
 
 else :
