@@ -1,8 +1,21 @@
 from wsgiref.simple_server import make_server
+import os
+from pathlib import Path
 import json
-_DEBUG_FILE = 'Amazon2021.08.04-09-41.json' #出力したいjsonファイル
-# Eclipse IDE専用プログラム出力
-_INFO_SUM = 10
+
+_DEBUG_PRINT = 1
+_DEBUG_FILE = '' #出力したいjsonファイル
+_INFO_SUM = 10 #インデントに設定をする要素数
+_SELECT_FLAG = 99 # 0,1,2,3
+
+p = Path(".")
+files = files = list(p.glob("./*.json"))
+file_updates = {file_path: os.stat(file_path).st_mtime for file_path in files}
+newst_file_path = max(file_updates, key=file_updates.get)
+_DEBUG_FILE = str(newst_file_path)
+
+if _DEBUG_PRINT==1:
+    print(_DEBUG_FILE)
 
 with open(_DEBUG_FILE, 'r', encoding='utf-8_sig') as f:
     jsn = json.load(f)
