@@ -8,18 +8,24 @@ import pandas as pd
 import json
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options #headlessオプションに使用
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 # Amazon ランキング　
 # スクレイピング Tool
 # 使い方
 # pip install モジュール
-#             requests        ->> https://pypi.org/project/requests/
-#			  BeautifulSoup4
-#			  pandas 
-#			  json
-#			  selenium       ->> https://kakashi-blog.com/amazon%E3%81%AF%E3%82%B9%E3%82%AF%E3%83%AC%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0%E3%81%8C%E7%A6%81%E6%AD%A2%E3%80%82selenium%E3%81%A7%E3%83%87%E3%83%BC%E3%82%BF%E5%8F%8E%E9%9B%86%E3%82%92%E3%81%97/
-#
+# requests      -->> pip3 install requests
+#               |->> https://pypi.org/project/requests/
+# BeautifulSoup4-->> pip3 install beautifulsoup4
+#               |->> https://pypi.org/project/beautifulsoup4/
+# pandas 
+
+# json
+# selenium      -->>
+#               |->> https://kakashi-blog.com/amazon%E3%81%AF%E3%82%B9%E3%82%AF%E3%83%AC%E3%82%A4%E3%83%94%E3%83%B3%E3%82%B0%E3%81%8C%E7%A6%81%E6%AD%A2%E3%80%82selenium%E3%81%A7%E3%83%87%E3%83%BC%E3%82%BF%E5%8F%8E%E9%9B%86%E3%82%92%E3%81%97/
+# chrom Driver  -->> pip3 install webdriver-manager
+#               |->> https://yuki.world/python-selenium-chromedriver-auto-update/
 #
 # python3 amazon_ranking.py
 #
@@ -28,7 +34,7 @@ from selenium.webdriver.chrome.options import Options #headlessオプション�
 _TARGET_WORD_1 = 'dp/'
 _TARGET_WORD_2 = '?_'
 
-_DRIVER = "/usr/local/bin/chromedriver" # 各環境のブラウザドラーバーのパスを設定
+#_DRIVER = "/usr/local/bin/chromedriver" # 各環境のブラウザドラーバーのパスを設定
 _BASE_URL = "https://www.amazon.co.jp/"
 _CATEGORY = 'digital-text'
 _BROWSE_NODE_ID = '2293143051'
@@ -46,8 +52,12 @@ _DICT_CNT = 0 #JSONファイル作成時の要素のカウントで使用
 _dict_info = {}
 _list_info = []
 
+"""
+ブラウザ操作をするクラス
+"""
 class get_sous:
-    
+
+
     def __init__(self,url,browser):
         self.url=url
         self.browser=browser
@@ -69,6 +79,49 @@ class get_sous:
         btn.click()
         time.sleep(5)
 
+
+"""
+個別メインページ内から詳細情報を取得するクラス
+
+"""
+class get_data_info:
+	
+	def __init__(self,main_soup):
+		self.main_soup=main_soup
+
+	def get_All(self):
+		# ここは実際に実行しデバック表示させて確認しないと抽出要素の基準が絞れないので注意
+		# noscriptにはデコード?されていない文字列が入っていた。
+		summary = self.main_soup.find("div", id="bookDescription_feature_div").find("noscript").text.strip()
+		# 参考: https://qiita.com/Azunyan1111/items/b161b998790b1db2ff7a
+		release = self.main_soup.select_one("#detailBullets_feature_div > ul > li:nth-child(3) > span > span:nth-child(2)").text
+		publisher = self.main_soup.select_one("ol.a-carousel > li:nth-child(2) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
+		# たまに順番がずれている場合があるため"日本語"が来た場合後ろの値を再取得する
+		if publisher == "日本語":
+			publisher = self.main_soup.select_one("ol.a-carousel > li:nth-child(3) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
+
+		return summary,release, publisher
+
+
+class get_ele_info:
+	def __init__(self, ele):
+		self.ele=ele
+
+	def get_All(self):
+		RANK = self.ele.find("span", class_="zg-badge-text").text
+		TITLE = self.ele.find("div", class_="p13n-sc-truncate").text.strip()
+		AUTHOR = self.ele.find("div", class_="a-row a-size-small").text
+		PRICE = self.ele.find("span", class_="p13n-sc-price").text
+		PRICE = PRICE[1:]
+		PICTURE_tag = self.ele.find("div", class_="a-section a-spacing-small")
+		PICTURE_URL = PICTURE_tag.find("img").get("src")
+		MAIN_PAGE_tag = self.ele.find("span", class_="aok-inline-block zg-item")
+		MAIN_PAGE_URL = MAIN_PAGE_tag.find("a", class_="a-link-normal").get("href")
+
+		return RANK,TITLE,AUTHOR,PRICE,PICTURE_URL,MAIN_PAGE_URL
+
+
+
 def open_selenium(load_url):
 	# ブラウザーの設定
 	option = Options()
@@ -86,7 +139,7 @@ def open_selenium(load_url):
 	#option.add_argument('--ignore-certificate-errors')
 	# 画像を読み込まない
 	option.add_argument('--blink-settings=imagesEnabled=false')
-	webd=webdriver.Chrome(_DRIVER,options=option)
+	webd = webdriver.Chrome(ChromeDriverManager().install(),options=option)
 	open1=get_sous(load_url,webd)
 	# ブラウザーの起動
 	open1.openurl()
@@ -94,25 +147,6 @@ def open_selenium(load_url):
 	soup=BeautifulSoup(sous1, 'html.parser')
 	return soup
 
-
-def get_summary(main_soup):
-	# ここは実際に実行しデバック表示させて確認しないと抽出要素の基準が絞れないので注意
-	# noscriptにはデコード?されていない文字列が入っていた。
-	summary = main_soup.find("div", id="bookDescription_feature_div").find("noscript").text.strip()
-	return summary
-
-def get_release(main_soup):
-	# 参考: https://qiita.com/Azunyan1111/items/b161b998790b1db2ff7a
-	release = main_soup.select_one("#detailBullets_feature_div > ul > li:nth-child(3) > span > span:nth-child(2)").text
-	return release
-
-def get_publisher(main_soup):
-	publisher = main_soup.select_one("ol.a-carousel > li:nth-child(2) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
-	# たまに順番がずれている場合があるため"日本語"が来た場合後ろの値を再取得する
-	if publisher == "日本語":
-		publisher = main_soup.select_one("ol.a-carousel > li:nth-child(3) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
-
-	return publisher
 
 # 型と中身を表示させる関数
 def print_data(data):
@@ -150,16 +184,11 @@ def ama(load_url):
 
 
 def get_info(ele):
-	RANK = ele.find("span", class_="zg-badge-text").text
-	TITLE = ele.find("div", class_="p13n-sc-truncate").text.strip()
-	AUTHOR = ele.find("div", class_="a-row a-size-small").text
-	PRICE = ele.find("span", class_="p13n-sc-price").text
-	PICTURE_tag = ele.find("div", class_="a-section a-spacing-small")
-	PICTURE_URL = PICTURE_tag.find("img").get("src")
-	MAIN_PAGE_tag = ele.find("span", class_="aok-inline-block zg-item")
-	MAIN_PAGE_URL = MAIN_PAGE_tag.find("a", class_="a-link-normal").get("href")
 
-	PRICE = PRICE[1:]
+	#get_ele_infoクラスを継承
+	data = get_ele_info(ele)
+	RANK,TITLE,AUTHOR,PRICE,PICTURE_URL,MAIN_PAGE_URL  = data.get_All()
+
 	# 作品ページURLから無駄な文字列の削除
 	idx = MAIN_PAGE_URL.find(_TARGET_WORD_1)  # 半角空白文字のインデックスを検索
 	# 検索文字列の先頭文字の場所が idxに格納される
@@ -167,13 +196,16 @@ def get_info(ele):
 	retext = MAIN_PAGE_URL[idx+3:] #dp/の3文字分をずらし
 	idx2 = retext.find(_TARGET_WORD_2)
 	ASIN = retext[:idx2]
+	# メインページURLの作成
 	MAIN = _BASE_URL + _TARGET_WORD_1 + ASIN
+	# メインページを取得
 	main_soup = open_selenium(MAIN)
-	SUMMARY = get_summary(main_soup)
-	RELEASE = get_release(main_soup)
-	PUBLISHER = get_publisher(main_soup)
 
-	#info 10項目
+	#get_data_infoクラスを継承
+	data2 = get_data_info(main_soup)
+	SUMMARY, RELEASE, PUBLISHER = data2.get_All()
+
+	#info 10項目 
 	info = {
 	"ranking": RANK,
 	"title": TITLE,
@@ -207,6 +239,11 @@ def get_info(ele):
 
 	
 def write(_dict,_list):
+	"""
+	取得,整形し出力したDict型データをJson,CSVで出力する
+
+	"""
+
 	time.sleep(2)
 	# utf-8で書き込み
 	with open('Amazon' + str(_TODAY) + '_id付' + '.json', 'w', encoding='utf-8_sig') as fp:
@@ -264,6 +301,11 @@ def get_data(load_url):
 
 
 def main():
+	"""
+	_DEBUG_FLAG が立っている場合 ランキング1~50位を取得
+	_DEBUG_FLAG が立っていない場合 ランキング1~100位を取得
+	
+	"""
 
 	if _DEBUG_FLAG == '0':
 		for n in range(1,3):
@@ -280,24 +322,17 @@ def main():
 	write(_dict_info,_list_info)
 
 if __name__ == '__main__':
+	"""
+	_DEBUG_FILE_VIEW_FLAG が立っている場合 メインを実行し 整形したJsondataを表示する
+	_DEBUG_FILE_VIEW_FLAG が立っていない場合 整形したJsondataのみ表示する
+
+	"""
 
 	if _DEBUG_FILE_VIEW_FLAG == '0':
 		main()
 		json_data_view()
 	else :
 		json_data_view()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
