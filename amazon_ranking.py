@@ -92,7 +92,7 @@ class get_data_info:
 	def get_All(self):
 		# ここは実際に実行しデバック表示させて確認しないと抽出要素の基準が絞れないので注意
 		# noscriptにはデコード?されていない文字列が入っていた。
-		summary = self.main_soup.find("div", id="bookDescription_feature_div").find("noscript").text.strip()
+		summary = self.main_soup.select_one("#bookDescription_feature_div > div > div.a-expander-content.a-expander-partial-collapse-content").text
 		# 参考: https://qiita.com/Azunyan1111/items/b161b998790b1db2ff7a
 		release = self.main_soup.select_one("#detailBullets_feature_div > ul > li:nth-child(3) > span > span:nth-child(2)").text
 		publisher = self.main_soup.select_one("ol.a-carousel > li:nth-child(2) > div > div.a-section.a-spacing-none.a-text-center.rpi-attribute-value > span").text
