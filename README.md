@@ -6,8 +6,30 @@ Amazon Kindleランキングの情報を取得します。
 
 出力形式
 
-- CSV
-- JSON
+- CSV (AmazonYYYY.MM.DD-hh-mm.csv)
+- JSON (AmazonYYYY.MM.DD-hh-mm.json)
+
+
+```json:Amazon2021.11.26-02-12.json
+[
+          {
+                    "ranking": "#1",
+                    "title": "薬屋のひとりごと 9巻 (デジタル版ビッグガンガンコミックス)",
+                    "author": "日向夏（ヒーロー文庫／主婦の友イ …",
+                    "price": "660",
+                    "img": "https://images-fe.ssl-images-amazon.com/images/I/91MApvHlERL.__BG0,0,0,0_FMpng_AC_UL200_SR200,200_.jpg",
+                    "asin": "B09KNB9CRV",
+                    "url": "https://www.amazon.co.jp/dp/B09KNB9CRV",
+                    "summary": "\n久々に隊商（キャラバン）がやってきた後宮で、小蘭と一緒に買い物を楽しむ猫猫は、そこで子猫を捕まえてくれた女官と再会します。そしてまた、壬氏から新たな相談事を受けることになリますが、それが別の事件に繋がってゆき──…。猫猫の元に新たな事件と謎が持ち込まれる第９巻!!\n\n",
+                    "release": "2021/11/25",
+                    "publisher": "スクウェア・エニックス"
+          },
+          {
+            ...
+          }
+]
+```
+
 
 ## Prerequisite
 
